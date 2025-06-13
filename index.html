@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Bulk Unavailable Domains Checker</title>
+</head>
+<body>
+  <h2>Enter up to 2000 domains</h2>
+  <textarea id="domainInput" rows="20" cols="50" placeholder="example.com&#10;example.net"></textarea><br>
+  <button onclick="checkDomains()">Check Domains</button>
+  <div id="results"></div>
+
+  <script>
+    async function checkDomains() {
+      const rawDomains = document.getElementById('domainInput').value.split('\n').map(x => x.trim()).filter(Boolean);
+      const resultsDiv = document.getElementById('results');
+      resultsDiv.innerHTML = 'Checking...';
+
+      const chunks = [];
+      for (let i = 0; i < rawDomains.length; i += 500) {
+        chunks.push(rawDomains.slice(i, i + 500));
+      }
+
+      let unavailableDomains = [];
+
+      for (const chunk of chunks) {
+        const domainsQuery = chunk.join(',');
+
+        const res = await fetch(`https://api.godaddy.com/v1/domains/available?domainNames=${encodeURIComponent(domainsQuery)}&checkType=FAST`, {
+          headers: {
+            'Authorization': 'sso-key dLYuzkosMXb5_5w8r1GAw2ES94SwM4onm5a:5UDQgP3bPRc6EoijADcqic',
+            'Accept': 'application/json'
+          }
+        });
+
+        const data = await res.json();
+
+        for (const domain of data.domains) {
+          if (!domain.available) {
+            unavailableDomains.push(domain.domain);
+          }
+        }
+      }
+
+      resultsDiv.innerHTML = `<h3>Unavailable Domains (${unavailableDomains.length})</h3><pre>${unavailableDomains.join('\n')}</pre>`;
+    }
+  </script>
+</body>
+</html>
