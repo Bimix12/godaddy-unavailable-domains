@@ -1,44 +1,29 @@
-<script>
-  async function checkDomains() {
-    const rawDomains = document.getElementById('domainInput').value.split('\n').map(x => x.trim()).filter(Boolean);
-    const resultsDiv = document.getElementById('results');
-    resultsDiv.innerHTML = 'Checking...';
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Unavailable Domains Checker</title>
+</head>
+<body>
+  <h2>Check Unavailable Domains (up to 2000)</h2>
+  <textarea id="domainInput" rows="20" cols="50" placeholder="example.com&#10;example.net"></textarea><br>
+  <button onclick="checkDomains()">Check</button>
+  <div id="results"></div>
 
-    const chunks = [];
-    for (let i = 0; i < rawDomains.length; i += 500) {
-      chunks.push(rawDomains.slice(i, i + 500));
-    }
+  <script>
+    async function checkDomains() {
+      const rawDomains = document.getElementById('domainInput').value.split('\n').map(x => x.trim()).filter(Boolean);
+      const resultsDiv = document.getElementById('results');
+      resultsDiv.innerHTML = 'Checking...';
 
-    let unavailableDomains = [];
-
-    for (const chunk of chunks) {
-      const res = await fetch("https://api.godaddy.com/v1/domains/available", {
-        method: "POST",
-        headers: {
-          "Authorization": "sso-key dLYuzkosMXb5_5w8r1GAw2ES94SwM4onm5a:5UDQgP3bPRc6EoijADcqic",
-          "Content-Type": "application/json",
-          "Accept": "application/json"
-        },
-        body: JSON.stringify({
-          domainNames: chunk,
-          checkType: "FAST"
-        })
+      const res = await fetch('/api/check', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ domains: rawDomains })
       });
 
-      if (!res.ok) {
-        resultsDiv.innerHTML = `<p style="color:red">Error: ${res.status} - ${res.statusText}</p>`;
-        return;
-      }
-
       const data = await res.json();
-
-      for (const domain of data.domains) {
-        if (!domain.available) {
-          unavailableDomains.push(domain.domain);
-        }
-      }
+      resultsDiv.innerHTML = `<h3>Unavailable Domains (${data.length})</h3><pre>${data.join('\n')}</pre>`;
     }
-
-    resultsDiv.innerHTML = `<h3>Unavailable Domains (${unavailableDomains.length})</h3><pre>${unavailableDomains.join('\n')}</pre>`;
-  }
-</script>
+  </script>
+</body>
+</html>
